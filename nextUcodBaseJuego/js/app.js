@@ -1,4 +1,66 @@
-var i=1;
+var puntuacion, movimientos, continuar;
+
+$(function(){
+  cambiarColorTitulo($(".main-titulo"));
+
+  $('.col-1').droppable({
+      accept: ".col-2"
+  });
+  $('.col-2').droppable({
+      accept: ".col-1, .col-3"
+  });
+  $('.col-3').droppable({
+      accept: ".col-2, .col-4"
+  });
+  $('.col-4').droppable({
+      accept: ".col-3, .col-5"
+  });
+  $('.col-5').droppable({
+      accept: ".col-4, .col-6"
+  });
+  $('.col-6').droppable({
+      accept: ".col-5, .col-7",
+
+  });
+  $('.col-7').droppable({
+      accept: ".col-6"
+  });
+
+  $('.btn-reinicio').click(function () {
+      if ($('.btn-reinicio').text() === 'Iniciar') {
+          if ($(".panel-tablero").css('display') == 'none') {
+              $(".panel-tablero").css('display', 'flex');
+              $(".panel-tablero").css('width', '70%');
+              $(".panel-tablero").css('height', '700px');
+              $(".panel-score").css('display', 'flex');
+              $(".panel-score").css('width', '25%');
+              $(".panel-score").css('height', '700px');
+              $(".time").css('display', 'block');
+              $(".time").css('width', '100%');
+              $(".time").css('height', '25%');
+              // $(".time").css('opacity', '1.0');
+      }
+      $('.main-titulo-juego-terminado').css("display", "none");
+
+      eliminarElementos();
+      llenarTablero()
+      puntuacion = 0;
+      movimientos = 0;
+      iniciar();
+      $(this).text("Reiniciar");
+    }
+    else
+    {
+      $(this).text('Iniciar');
+      $('#score-text').text('0');
+      pararTiempo();
+      limpiarContador();
+    }
+
+
+})
+
+
 
 function cambiarColorTitulo(elemento)
 {
@@ -21,95 +83,150 @@ function cambiarColorOriginalTitulo(elemento)
   )
 }
 
+function iniciar(){
+      continuar = true;
+      hacerDropAndDrag();
+      // clearInterval(realizarMovimientos());
 
+      var widthPanel = $('.panel-tablero').css('width');
 
-function validarCombinacion()
-{
-  var tableroMarcado = resetearTableroMarcado();
+      //ocultando el tablero con animacion
+      $('.panel-tablero').animate({
+          height:0,
+          width:0
+      }, 3000, function(){
+        $('.panel-tablero').css('display', 'none');
+      });
 
-  tableroMarcado = validarCombinaciones(tableroMarcado);
+      $('.panel-score').animate({
+          width: widthPanel
+      },3000);
 
-  // tableroMarcado = validarCombinacionXFilas(tableroMarcado);
-  console.table(tableroMarcado);
-  return tableroMarcado;
+      $('.btn-reinicio').text('Iniciar');
 
+      $('.main-titulo-juego-terminado').css('display','block');
 
 
 }
 
-function validarCombinaciones(tablero){
+function eliminarElementos(){
+  for (var i = 0; i < 7; i++) {
+    $('.col-'+ i).empty();
+  }
+}
 
-      var elementoActual;
-      var imagen;
-      var imagenSig;
-      var numElementosRepetidos =0;
-      var combinacionCorrecta = false;
+function llenarTablero()
+{
+  var col, fila;
+  col = 1;
+  while (col<8) {
+    fila = 1;
+    while (fila<8) {
+      var nuevoElemento =
+      $('<img>',{'src':'image/'+(1 + Math.floor(Math.random()*4))+'.png', 'class':'elemento'});
+      $(nuevoElemento).draggable();
+      $('.col-'+col).append(nuevoElemento);
+    }
+  }
+}
 
-      for (var fila = 0; i < tablero.length; fila++) { // recorre por columna
-        for (var columna = 0; j < tablero[i].length  ; j++) { //tablero[i].length
+function cuentaMovimientos(){
+      movimientos++;
+      $('movimientos-text').text(movimientos);
+}
 
-          // Validacion x Filas
-          if ((7 - col) > 2) {
-                elementoActual = $('.col-' + (columna + 1)).children()[fila];
-                imagen = $(elementoActual).prop('src').substring($(elementoActual).prop('src').length - 5);
+function cambiarElementos(elemento1, elemento2){
+  $(elemento1).replaceWith($(elemento2));
+}
 
-                numElementosRepetidos = 1;
+// function intercambiarElementos(elm1, elm2) {
+//     var parent1, next1,
+//         parent2, next2;
+//
+//     parent1 = elm1.parentNode;
+//     next1 = elm1.nextSibling;
+//     parent2 = elm2.parentNode;
+//     next2 = elm2.nextSibling;
+//
+//     parent1.insertBefore(elm2, next1);
+//     parent2.insertBefore(elm1, next2);
+// }
+//
 
-                while ((7 - columna) >= 3 && contador < (7 - columna)) {
-                    var elementoSig = $('.col-' + (columna + contador + 1)).children()[fila];
-                    imagenSig = $(elementoSig).prop('src').substring($(elementoSig).prop('src').length - 5);
+function validarMovimientos() {
 
-                    if (imagenSig !== imagenSig) {
-                        break;
-                    }
+    var contador;
+    var nombreImagen;
+    var nombreImagenSgte;
+    var figurasMarcadas = inicializarFigurasMarcadas();
+    var huboCambios = false;
 
-                    ++numElementosRepetidos;
-                }
+    for (var row = 0; row < 7; ++row) {
+        for (var col = 0; col < 7; ++col) {
+            if ((7 - col) > 2) {
+                nombreImagen = $('.col-' + (col + 1)).children()[row];
+                nombreImagen = $(nombreImagen).prop('src').substring($(nombreImagen).prop('src').length - 5);
 
-                if (numElementosRepetidos >= 3) {
-                    combinacionCorrecta = true;
-                    for (var i = 0; i < contador; ++i) {
-                        tablero[fila][columna + i] = true;
-                    }
-                }
-            }
+                contador = 1;
 
-            // Validacion x Columnas
-            if ((7 - fila) > 2) {
-                elementoActual = $('.col-' + (columna + 1)).children()[fila];
-                imagen = $(elementoActual).prop('src').substring($(elementoActual).prop('src').length - 5);
-
-                numElementosRepetidos = 1;
-
-                while ((7 - fila) >= 3 && numElementosRepetidos < (7 - fila)) {
-                    var elementoSig  = $('.col-' + (columna + 1)).children()[fila + numElementosRepetidos];
-                    imagenSig = $(elementoSig).prop('src').substring($(elementoSig).prop('src').length - 5);
+                while ((7 - col) >= 3 && contador < (7 - col)) {
+                    nombreImagenSgte = $('.col-' + (col + contador + 1)).children()[row];
+                    nombreImagenSgte = $(nombreImagenSgte).prop('src').substring($(nombreImagenSgte).prop('src').length - 5);
 
                     if (nombreImagen !== nombreImagenSgte) {
                         break;
                     }
 
-                    ++numElementosRepetidos;
+                    ++contador;
                 }
 
-                if (numElementosRepetidos >= 3) {
-                    combinacionCorrecta = true;
+                if (contador >= 3) {
+                    huboCambios = true;
                     for (var i = 0; i < contador; ++i) {
-                        tablero[fila + i][columna] = true;
+                        figurasMarcadas[row][col + i] = true;
                     }
                 }
-          }
-        }
-      }
+            }
 
-      return tablero;
+            if ((7 - row) > 2) {
+                nombreImagen = $('.col-' + (col + 1)).children()[row];
+                nombreImagen = $(nombreImagen).prop('src').substring($(nombreImagen).prop('src').length - 5);
+
+                contador = 1;
+
+                while ((7 - row) >= 3 && contador < (7 - row)) {
+                    nombreImagenSgte = $('.col-' + (col + 1)).children()[row + contador];
+                    nombreImagenSgte = $(nombreImagenSgte).prop('src').substring($(nombreImagenSgte).prop('src').length - 5);
+
+                    if (nombreImagen !== nombreImagenSgte) {
+                        break;
+                    }
+
+                    ++contador;
+                }
+
+                if (contador >= 3) {
+                    huboCambios = true;
+                    for (var i = 0; i < contador; ++i) {
+                        figurasMarcadas[row + i][col] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (huboCambios) {
+        resetearTableroMarcado(figurasMarcadas);
+    } else {
+        clearInterval(idRealizarMovimientosInterval);
+    }
 }
 
 function resetearTableroMarcado(){
   var tableroMarcado = [];
   for (var fila = 0; fila < 7; ++fila) {
       tableroMarcado[fila] = [];
-      for (var columna = 0; columna < 7; ++jcolumna) {
+      for (var columna = 0; columna < 7; ++columna) {
           tableroMarcado[fila][columna] = false;
       }
   }
@@ -117,47 +234,24 @@ function resetearTableroMarcado(){
   return tableroMarcado;
 }
 
-function llenarTablero()
-{
+function actualizarTablero(){
 
-  // console.log(i);
-  var num = 0;
-  var img = 0;
-  // var lengthColumnas = 0;
-  // lengthColumnas = $(".col-"+i).find("img").length;
-  //
-  // console.log(lengthColumnas);
-  //lleno la columna si no hay elementos en la columnas y si ya no esta llena la columna
-  // if(lengthColumnas!= null && lengthColumnas!=0 && (lengthColumnas<8)){
-    if(true){
-    var x = 0;
-      // si hay ellementos en la columna asigno al contador "x" el numero de elementos
-     // if (typeof lengthColumnas === 'number' && lengthColumnas >0 )
-     //    { console.log(lengthColumnas);
-     //       x = lengthColumnas;}
-        while (x < 8) {
-          //verifico si hay que reponer caramelos(ellementos) faltantes
-            if($(".col-"+i).children("img:nth-child("+x+")").html()==null)
-            {
-              num = Math.floor(Math.random()*4)+1;
-              img="image/"+num+".png";
-              $(".col-"+i).prepend("<img src="+img+" class='elemento'/>").css("justify-content", "flex-start")
-            }
-              x++;
-        }
-
-  }
 }
 
-$(function(){
+function sumarPuntuacion(puntosGanados)
+{
+  puntuacion += puntosGanados;
+  $('#score-text').text(puntuacion);
 
-  cambiarColorTitulo($(".main-titulo"));
-  // $(".elemento").draggable({disable:true});
-  // // llenarTablero($("#panel-tablero"));
-  // $(".elemento").draggable({disable:false});
-  while (i<8) {
-    llenarTablero();
-    i= i+1;
-  }
-  validarCombinacion();
-})
+}
+function hacerDropAndDrag()
+{
+  $('.elemento').draggable({
+    disabled: false,
+    cursor: 'move',
+    containment: '.panel-tablero',
+    revert: true,
+    revertDuration: 500,
+    snap: '.elemento'
+  })
+}
